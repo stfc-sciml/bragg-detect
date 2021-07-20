@@ -10,14 +10,9 @@ if __name__ == '__main__':
         data = h5[dset][:]
 
     # detect
-    peaks = detect_bragg_peaks(data, large_peak_size=[10, 10, 50],
+    peaks = detect_bragg_peaks(('data.hdf5', dset),
+                               large_peak_size=[10, 10, 50],
                                threshold=.2, workers=1)
-
-    # if using many processors, pass (filename, dsetname) for max efficiency
-    # for example:
-    # peaks = detect_bragg_peaks(('data.hdf5', dset),
-    #                            large_peak_size=[10, 10, 50],
-    #                            threshold=.2, workers=12)
 
     # save peak locations
     np.savetxt('result/peak_locations.txt', peaks, fmt='%d')
