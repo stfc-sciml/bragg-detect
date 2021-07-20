@@ -1,3 +1,4 @@
+import h5py
 import numpy as np
 
 from bragg_detect import detect_bragg_peaks, plot_peaks_over_data
