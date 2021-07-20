@@ -31,11 +31,11 @@ def detect_bragg_peaks(data,
     """
     Detect Bragg peaks.
 
-    :param data: 3d data in numpy.ndarray or a tuple (filename, dsetname)
-        of a HDF5 file; use (filename, dsetname) to save memory and
-        to maximise the computing power of multiple workers
-    :param large_peak_size: approximate size of the largest peaks in data,
-        array like (size_x, size_y, size_z);
+    :param data: 3d data as a numpy.ndarray or a tuple (filename, dsetname)
+        to specify a HDF5 dataset; use the latter to save memory and/or
+        to maximise the performance when using multiple workers
+    :param large_peak_size: approximate size of the large peaks in data,
+        array-like in the form of (size_x, size_y, size_z);
     :param detect_block_size: size of the detection blocks relative to
         `large_peak_size`; default is 5
     :param detect_block_overlap: overlap of the detection blocks
@@ -141,12 +141,13 @@ def plot_peaks_over_data(data, plot_size=None, vmax=(1, 1, 1),
     Plot peaks over 3d data projections
 
     :param data: 3d data
-    :param plot_size: resize images for better visualization; default is None
+    :param plot_size: resize images for better visualization;
+        default is None, or using original image size
     :param vmax: set vmax for better visualization; default is (1, 1, 1)
-    :param axis_on: show axis ticks; default is False
-    :param peak_sets: sets of peaks, list of (peaks, color, marker, scale, lw);
-        default is None
-    :param save_to_file: save figure to this file; default is None
+    :param axis_on: show axis labels and ticks; default is False
+    :param peak_sets: sets of peaks to plot, list of tuple in the form of
+        (peaks, color, marker, scale, lw); default is None
+    :param save_to_file: save figure to a file; default is None
     :return:
     """
     # projections
