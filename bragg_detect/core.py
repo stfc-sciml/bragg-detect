@@ -1,3 +1,4 @@
+import itertools
 import multiprocessing as mp
 import time
 
@@ -313,10 +314,13 @@ def detect_peaks(data, strategy_3d,
                 args_pool.append(args)
                 i_block += 1
 
-    chunk = max(int(n_blocks / workers / 8), 1)
-    with mp.Pool(processes=workers) as pool:
-        peaks_global_pool = pool.starmap(detect_peaks_pool, args_pool,
-                                         chunksize=chunk)
+    if workers == 1:
+        peaks_global_pool = itertools.starmap(detect_peaks_pool, args_pool)
+    else:
+        chunk = max(int(n_blocks / workers / 8), 1)
+        with mp.Pool(processes=workers) as pool:
+            peaks_global_pool = pool.starmap(detect_peaks_pool, args_pool,
+                                             chunksize=chunk)
 
     # add to list
     peaks_detected = np.ndarray((0, 3), dtype=int)
