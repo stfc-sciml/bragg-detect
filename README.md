@@ -6,13 +6,13 @@
 
 ## Quick Start
 
-To install `ffsas`:
+To install `bragg-detect`:
 
 ```bash
 pip install https://github.com/stfc-sciml/bragg-detect/archive/refs/heads/master.zip
 ```
 
-It only has one user API:
+`bragg-detect` only has one user API:
 
 ```python
 def detect_bragg_peaks(data,
@@ -75,7 +75,7 @@ show respectively the input 3D data and the detected Bragg peaks.
 ![input](example/result/input_image.png)
 
 
-* Detected Bragg peaks
+* Detected Bragg peaks over the input data
 ![output](example/result/peaks_on_image.png)
 
 
