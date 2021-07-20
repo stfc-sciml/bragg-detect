@@ -30,9 +30,10 @@ def detect_bragg_peaks(data,
     """
     Detect Bragg peaks.
 
-    :param data: 3d data as a numpy.ndarray or a tuple (filename, dsetname)
-        to specify a HDF5 dataset; use the latter to save memory and/or
-        to maximise the performance when using multiple workers
+    :param data: the 3D data as a numpy.ndarray or a tuple
+        (filename, dsetname) to specify a HDF5 dataset storing the 3D data;
+        if possible, try to use the latter for both better performance and
+        less memory consumption
     :param large_peak_size: approximate size of the large peaks in data,
         array-like in the form of (size_x, size_y, size_z);
     :param detect_block_size: size of the detection blocks relative to
@@ -65,12 +66,16 @@ def detect_bragg_peaks(data,
     """
 ```
 
-See [example/example.py](example/example.py) to learn the usage. The following two figures
-show respectively the input 3D data and the detected Bragg peaks, summed over the three dimensions.
+See [example/example.py](example/example.py) to learn the usage. 
+The 3D data has a shape of `(1520, 128, 4451)`. The following two figures
+show respectively the input 3D data and the detected Bragg peaks.
 
 
+* Input 3D data summed over the three dimensions
 ![input](example/result/input_image.png)
 
+
+* Detected Bragg peaks
 ![output](example/result/peaks_on_image.png)
 
 
@@ -81,4 +86,6 @@ Kuangdai Leng<sup>1</sup>, Pascal Manuel<sup>2</sup>, Jeyan Thiyagalingam<sup>1<
 
 <sup>2</sup> ISIS Neutron and Muon Source, STFC, UK
 
-Thanks to Samuel Jackson<sup>1</sup> and Anders Markvardsen<sup>2</sup>.
+We thank Samuel Jackson<sup>1</sup> and Anders Markvardsen<sup>2</sup> for their 
+investigations in [an earlier project](https://github.com/ISISScientificComputing/ml-peak-finding) 
+that have facilitated our understanding of the problem.
