@@ -303,8 +303,11 @@ def detect_peaks(data, strategy_3d,
                 args_pool.append(args)
                 i_block += 1
 
+    # permute for better load balancing
+    args_pool = np.array(args_pool, dtype=object)
+    args_pool = args_pool[np.random.permutation(len(args_pool))]
     with multiprocessing.Pool(processes=workers) as pool:
-        peaks_global_pool = pool.starmap(detect_peaks_pool, args_pool)
+        peaks_global_pool = pool.starmap(detect_peaks_pool, list(args_pool))
 
     # add to list
     peaks_detected = np.ndarray((0, 3), dtype=int)
