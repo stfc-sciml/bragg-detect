@@ -156,13 +156,13 @@ def plot_peaks_over_data(data, plot_size=None, vmax=(1, 1, 1),
 
     # image
     plot_image(axes[0, 0], sum0, (plot_size[1], plot_size[2]),
-               vmax=vmax[0], axis_on=axis_on)
+               vmax=vmax[0], axes_labels=['Z', 'Y'] if axis_on else None)
     plot_image(axes[1, 0], sum1, (plot_size[0], plot_size[2]),
-               vmax=vmax[1], axis_on=axis_on)
+               vmax=vmax[1], axes_labels=['Z', 'X'] if axis_on else None)
     plot_image(axes[0, 1], sum2, (plot_size[1], plot_size[0]),
-               vmax=vmax[2], axis_on=axis_on)
+               vmax=vmax[2], axes_labels=['X', 'Y'] if axis_on else None)
     plot_image(axes[1, 1], sum2.T, (plot_size[0], plot_size[0]),
-               vmax=vmax[2], axis_on=axis_on)
+               vmax=vmax[2], axes_labels=['Y', 'X'] if axis_on else None)
 
     # peaks
     if peak_sets is None:

@@ -43,16 +43,19 @@ def to_structured(flattened, dims):
         return np.transpose(np.array([x, y]))
 
 
-def plot_image(ax, image, plot_size=None, vmax=1, axis_on=False):
+def plot_image(ax, image, plot_size=None, vmax=1, axes_labels=None):
     if plot_size is None:
         plot_size = image.shape
     resized = resize(image, plot_size)
-    if not axis_on:
+    if axes_labels is None:
         ax.imshow(resized, vmax=vmax)
         ax.axis('off')
     else:
         ax.imshow(resized, vmax=vmax, aspect='auto',
                   extent=(0, image.shape[1], 0, image.shape[0]))
+        ax.tick_params(axis='both', which='major', labelsize=6)
+        ax.set_xlabel(axes_labels[0], fontsize=6)
+        ax.set_ylabel(axes_labels[1], fontsize=6)
 
 
 def plot_peaks(ax, peaks, image, plot_size=None,
