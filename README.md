@@ -9,7 +9,7 @@
 To install `bragg-detect`:
 
 ```bash
-pip install https://github.com/stfc-sciml/bragg-detect/archive/refs/heads/master.zip
+pip install https://github.com/stfc-sciml/bragg-detect/archive/refs/heads/main.zip
 ```
 
 `bragg-detect` only has one user API:
