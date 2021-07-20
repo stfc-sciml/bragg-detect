@@ -11,7 +11,7 @@ if __name__ == '__main__':
 
     # detect
     peaks = detect_bragg_peaks(data, large_peak_size=[10, 10, 50],
-                               threshold=.2, workers=2)
+                               threshold=.2, workers=1)
 
     # save peak locations
     np.savetxt(f'result/peak_locations.txt', peaks, fmt='%d')
