@@ -238,12 +238,28 @@ def peaks_local_to_global(peak_structured_local, block_loc, data_shape):
     return to_flattened(peak_structured_global, data_shape)
 
 
+# shared args for Pool
+shared_args = None
+
+
 # function for Pool
-def detect_peaks_pool(xl, xw, xe, yl, yw, ye, zl, zw, ze,
-                      t0, i_block, n_blocks,
-                      data, min_sigma, max_sigma, num_sigma,
-                      threshold, overlap, log_scale, strategy_3d, fixed_radii,
-                      n_components, n_init, verbose):
+def detect_peaks_pool(args):
+    # get shared args
+    global shared_args
+    t0, n_blocks, data = shared_args[0], shared_args[1], shared_args[2]
+    min_sigma, max_sigma, num_sigma, threshold, overlap, log_scale = \
+        shared_args[3], shared_args[4], shared_args[5], shared_args[6], \
+        shared_args[7], shared_args[8]
+    strategy_3d, fixed_radii, n_components, n_init = \
+        shared_args[9], shared_args[10], shared_args[11], shared_args[12]
+    verbose = shared_args[13]
+
+    # get args
+    xl, xw, xe, yl, yw, ye, zl, zw, ze, i_block = \
+        args[0], args[1], args[2], args[3], args[4], args[5], \
+        args[6], args[7], args[8], args[9]
+
+    # 2d blobs in block
     block_loc = np.array([xl, yl, zl])
     block_width = np.array([xw, yw, zw])
     block_extend = np.array([xe, ye, ze])
@@ -253,6 +269,8 @@ def detect_peaks_pool(xl, xw, xe, yl, yw, ye, zl, zw, ze,
         threshold, overlap, log_scale)
     if len(blobs[0]) * len(blobs[1]) * len(blobs[2]) == 0:
         return np.ndarray((0, 3), dtype=int)
+
+    # 3d peaks
     if strategy_3d == 'bgm_clustering':
         # extrude 3d
         candidates = extrude_blobs_3d(blobs, block.shape, fixed_radii)
@@ -270,6 +288,7 @@ def detect_peaks_pool(xl, xw, xe, yl, yw, ye, zl, zw, ze,
         peaks_local = find_blob_wise_peaks(blobs, block, fixed_radii)
     else:
         raise RuntimeError(f'Unsupported 3D strategy: {strategy_3d}')
+
     # local to global
     peaks_global = peaks_local_to_global(peaks_local, block_loc, data.shape)
     if verbose and len(peaks_global) > 0:
@@ -287,19 +306,23 @@ def detect_peaks(data, strategy_3d,
                  z_loc, z_width, z_extend,
                  min_sigma, max_sigma, num_sigma, threshold, overlap, log_scale,
                  fixed_radii, n_components, n_init, workers, verbose):
-    # args for Pool
+    # set shared args
+    global shared_args
     t0 = time.time()
-    i_block = 0
     n_blocks = len(x_loc) * len(y_loc) * len(z_loc)
+    shared_args = (
+        t0, n_blocks, data,
+        min_sigma, max_sigma, num_sigma, threshold, overlap, log_scale,
+        strategy_3d, fixed_radii, n_components, n_init,
+        verbose)
+
+    # args for Pool
     args_pool = []
+    i_block = 0
     for xl, xw, xe in zip(x_loc, x_width, x_extend):
         for yl, yw, ye in zip(y_loc, y_width, y_extend):
             for zl, zw, ze in zip(z_loc, z_width, z_extend):
-                args = (xl, xw, xe, yl, yw, ye, zl, zw, ze,
-                        t0, i_block, n_blocks,
-                        data, min_sigma, max_sigma, num_sigma,
-                        threshold, overlap, log_scale, strategy_3d, fixed_radii,
-                        n_components, n_init, verbose)
+                args = (xl, xw, xe, yl, yw, ye, zl, zw, ze, i_block)
                 args_pool.append(args)
                 i_block += 1
 
@@ -307,7 +330,8 @@ def detect_peaks(data, strategy_3d,
     args_pool = np.array(args_pool, dtype=object)
     args_pool = args_pool[np.random.permutation(len(args_pool))]
     with multiprocessing.Pool(processes=workers) as pool:
-        peaks_global_pool = pool.starmap(detect_peaks_pool, list(args_pool))
+        peaks_global_pool = pool.imap_unordered(detect_peaks_pool,
+                                                list(args_pool))
 
     # add to list
     peaks_detected = np.ndarray((0, 3), dtype=int)

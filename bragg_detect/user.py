@@ -168,17 +168,13 @@ def plot_peaks_over_data(data, plot_size=None, vmax=(1, 1, 1),
     if peak_sets is None:
         peak_sets = []
     for peak, color, marker, scale, lw in peak_sets:
-        plot_peaks(axes[0, 0], (peak[:, 2], peak[:, 1]), sum0,
-                   plot_size=(plot_size[1], plot_size[2]),
+        plot_peaks(axes[0, 0], (peak[:, 2], peak[:, 1]),
                    color=color, marker=marker, s=scale, lw=lw)
-        plot_peaks(axes[1, 0], (peak[:, 2], peak[:, 0]), sum1,
-                   plot_size=(plot_size[0], plot_size[2]),
+        plot_peaks(axes[1, 0], (peak[:, 2], peak[:, 0]),
                    color=color, marker=marker, s=scale, lw=lw)
-        plot_peaks(axes[0, 1], (peak[:, 0], peak[:, 1]), sum2,
-                   plot_size=(plot_size[1], plot_size[0]),
+        plot_peaks(axes[0, 1], (peak[:, 0], peak[:, 1]),
                    color=color, marker=marker, s=scale, lw=lw)
-        plot_peaks(axes[1, 1], (peak[:, 1], peak[:, 0]), sum2.T,
-                   plot_size=(plot_size[0], plot_size[0]),
+        plot_peaks(axes[1, 1], (peak[:, 1], peak[:, 0]),
                    color=color, marker=marker, s=scale, lw=lw)
 
     # save
