@@ -1,4 +1,4 @@
-import multiprocessing
+import multiprocessing as mp
 import time
 
 import numpy as np
@@ -273,7 +273,7 @@ def detect_peaks_pool(
         print(f'Block {i_block} / {n_blocks}: '
               f'peaks in block = {len(peaks_global)}; '
               f'elapsed sec = {time.time() - t0:.1f}; '
-              f'process pid = {multiprocessing.current_process().pid}',
+              f'process pid = {mp.current_process().pid}',
               flush=True)
     return peaks_global
 
@@ -307,7 +307,7 @@ def detect_peaks(data, strategy_3d,
                 i_block += 1
 
     chunk = max(int(n_blocks / workers / 8), 1)
-    with multiprocessing.Pool(processes=workers) as pool:
+    with mp.Pool(processes=workers) as pool:
         peaks_global_pool = pool.starmap(detect_peaks_pool, args_pool,
                                          chunksize=chunk)
 
