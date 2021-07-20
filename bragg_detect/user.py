@@ -191,9 +191,8 @@ def plot_peaks_over_data(data, plot_size=None, vmax=(1, 1, 1),
                    color=color, marker=marker, s=scale, lw=lw)
 
     # save
-    plt.tight_layout()
     if save_to_file is not None:
-        plt.savefig(save_to_file, bbox_inches='tight', pad_inches=0.05)
+        plt.savefig(save_to_file, bbox_inches='tight')
         plt.close()
     else:
         plt.show()
