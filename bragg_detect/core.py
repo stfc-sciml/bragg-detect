@@ -1,6 +1,7 @@
 import multiprocessing as mp
 import time
 
+import h5py
 import numpy as np
 from skimage.feature import blob_log
 from sklearn.mixture import BayesianGaussianMixture
@@ -237,6 +238,12 @@ def detect_peaks_pool(
         min_sigma, max_sigma, num_sigma, threshold, overlap, log_scale,
         strategy_3d, fixed_radii, n_components, n_init,
         verbose):
+    # data is h5 (filename, dsetname)
+    if isinstance(data, tuple):
+        (filename, dsetname) = data
+        h5 = h5py.File(filename, 'r')
+        data = h5[dsetname]
+
     # 2d blobs in block
     block_loc = np.array([xl, yl, zl])
     block_width = np.array([xw, yw, zw])
@@ -315,5 +322,13 @@ def detect_peaks(data, strategy_3d,
     peaks_detected = np.ndarray((0, 3), dtype=int)
     for peaks_global_block in peaks_global_pool:
         peaks_detected = np.union1d(peaks_detected, peaks_global_block)
-    peaks_detected = to_structured(peaks_detected, data.shape)
+
+    # data is h5 (filename, dsetname)
+    if isinstance(data, tuple):
+        (filename, dsetname) = data
+        with h5py.File(filename, 'r') as h5:
+            data_shape = h5[dsetname].shape
+    else:
+        data_shape = data.shape
+    peaks_detected = to_structured(peaks_detected, data_shape)
     return peaks_detected, time.time() - t0

@@ -8,6 +8,7 @@
 
 """ user interfaces """
 
+import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -30,7 +31,9 @@ def detect_bragg_peaks(data,
     """
     Detect Bragg peaks.
 
-    :param data: 3d data
+    :param data: 3d data in numpy.ndarray or a tuple (filename, dsetname)
+        of a HDF5 file; use (filename, dsetname) to save memory and
+        to maximise the computing power of multiple workers
     :param large_peak_size: approximate size of the largest peaks in data,
         array like (size_x, size_y, size_z);
     :param detect_block_size: size of the detection blocks relative to
@@ -61,13 +64,21 @@ def detect_bragg_peaks(data,
     :param verbose: verbose info during running; default is True
     :return: detected Bragg peaks
     """
+    # data is h5 (filename, dsetname)
+    if isinstance(data, tuple):
+        (filename, dsetname) = data
+        with h5py.File(filename, 'r') as h5:
+            data_shape = h5[dsetname].shape
+    else:
+        data_shape = data.shape
+
     # parameters for block slicing
     large_peak_size = np.array(large_peak_size)
     shift = np.floor((detect_block_size - detect_block_overlap) *
                      large_peak_size).astype(int)
-    x_loc = np.arange(0, data.shape[0], shift[0])
-    y_loc = np.arange(0, data.shape[1], shift[1])
-    z_loc = np.arange(0, data.shape[2], shift[2])
+    x_loc = np.arange(0, data_shape[0], shift[0])
+    y_loc = np.arange(0, data_shape[1], shift[1])
+    z_loc = np.arange(0, data_shape[2], shift[2])
     width = np.ceil(detect_block_size * large_peak_size).astype(int)
     x_width = np.full(len(x_loc), width[0])
     y_width = np.full(len(y_loc), width[1])
@@ -87,7 +98,7 @@ def detect_bragg_peaks(data,
     # verbose input
     if verbose:
         print(f'Bragg peak detection started:')
-        print(f'* Data dimension: {np.array(data.shape)}')
+        print(f'* Data dimension: {np.array(data_shape)}')
         print(f'* Large peak size: {large_peak_size}')
         print(f'* Widths of detection blocks: {width}')
         print(f'* Widths of verification blocks: {width + 2 * extend}')
