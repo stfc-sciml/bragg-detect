@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-#
-# core.py
-# bragg-detect: detecting Bragg peaks in 3D X-ray/neutron images
-# Copyright © 2021 SciML, STFC, UK. All rights reserved.
-
-
-""" core algorithms """
-
 import multiprocessing
 import time
 
@@ -238,27 +228,15 @@ def peaks_local_to_global(peak_structured_local, block_loc, data_shape):
     return to_flattened(peak_structured_global, data_shape)
 
 
-# shared args for Pool
-shared_args = None
-
-
 # function for Pool
-def detect_peaks_pool(args):
-    # get shared args
-    global shared_args
-    t0, n_blocks, data = shared_args[0], shared_args[1], shared_args[2]
-    min_sigma, max_sigma, num_sigma, threshold, overlap, log_scale = \
-        shared_args[3], shared_args[4], shared_args[5], shared_args[6], \
-        shared_args[7], shared_args[8]
-    strategy_3d, fixed_radii, n_components, n_init = \
-        shared_args[9], shared_args[10], shared_args[11], shared_args[12]
-    verbose = shared_args[13]
-
-    # get args
-    xl, xw, xe, yl, yw, ye, zl, zw, ze, i_block = \
-        args[0], args[1], args[2], args[3], args[4], args[5], \
-        args[6], args[7], args[8], args[9]
-
+def detect_peaks_pool(
+        # owned
+        xl, xw, xe, yl, yw, ye, zl, zw, ze, i_block,
+        # shared
+        n_blocks, t0, data,
+        min_sigma, max_sigma, num_sigma, threshold, overlap, log_scale,
+        strategy_3d, fixed_radii, n_components, n_init,
+        verbose):
     # 2d blobs in block
     block_loc = np.array([xl, yl, zl])
     block_width = np.array([xw, yw, zw])
@@ -306,15 +284,9 @@ def detect_peaks(data, strategy_3d,
                  z_loc, z_width, z_extend,
                  min_sigma, max_sigma, num_sigma, threshold, overlap, log_scale,
                  fixed_radii, n_components, n_init, workers, verbose):
-    # set shared args
-    global shared_args
+    # shared
     t0 = time.time()
     n_blocks = len(x_loc) * len(y_loc) * len(z_loc)
-    shared_args = (
-        t0, n_blocks, data,
-        min_sigma, max_sigma, num_sigma, threshold, overlap, log_scale,
-        strategy_3d, fixed_radii, n_components, n_init,
-        verbose)
 
     # args for Pool
     args_pool = []
@@ -322,16 +294,22 @@ def detect_peaks(data, strategy_3d,
     for xl, xw, xe in zip(x_loc, x_width, x_extend):
         for yl, yw, ye in zip(y_loc, y_width, y_extend):
             for zl, zw, ze in zip(z_loc, z_width, z_extend):
-                args = (xl, xw, xe, yl, yw, ye, zl, zw, ze, i_block)
+                args = (
+                    # owned
+                    xl, xw, xe, yl, yw, ye, zl, zw, ze, i_block,
+                    # shared
+                    n_blocks, t0, data,
+                    min_sigma, max_sigma, num_sigma, threshold, overlap,
+                    log_scale,
+                    strategy_3d, fixed_radii, n_components, n_init,
+                    verbose)
                 args_pool.append(args)
                 i_block += 1
 
-    # permute for better load balancing
-    args_pool = np.array(args_pool, dtype=object)
-    args_pool = args_pool[np.random.permutation(len(args_pool))]
+    chunk = max(int(n_blocks / workers / 8), 1)
     with multiprocessing.Pool(processes=workers) as pool:
-        peaks_global_pool = pool.imap_unordered(detect_peaks_pool,
-                                                list(args_pool))
+        peaks_global_pool = pool.starmap(detect_peaks_pool, args_pool,
+                                         chunksize=chunk)
 
     # add to list
     peaks_detected = np.ndarray((0, 3), dtype=int)
