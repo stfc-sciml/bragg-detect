@@ -55,7 +55,7 @@ def plot_image(ax, image, plot_size=None, vmax=1, axes_labels=None):
         ax.set_ylabel(axes_labels[1], fontsize=6)
     ax.imshow(resized, vmax=vmax, origin='lower',
               aspect=image.shape[1] * plot_size[0] / (
-                          image.shape[0] * plot_size[1]),
+                      image.shape[0] * plot_size[1]),
               extent=(0, image.shape[1], 0, image.shape[0]))
 
 
