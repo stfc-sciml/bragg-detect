@@ -31,9 +31,10 @@ def detect_bragg_peaks(data,
     """
     Detect Bragg peaks.
 
-    :param data: 3d data as a numpy.ndarray or a tuple (filename, dsetname)
-        to specify a HDF5 dataset; use the latter to save memory and/or
-        to maximise the performance when using multiple workers
+    :param data: the 3D data as a numpy.ndarray or a tuple
+        (filename, dsetname) to specify a HDF5 dataset storing the 3D data;
+        if possible, try to use the latter for both better performance and
+        less memory consumption
     :param large_peak_size: approximate size of the large peaks in data,
         array-like in the form of (size_x, size_y, size_z);
     :param detect_block_size: size of the detection blocks relative to
