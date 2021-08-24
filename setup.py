@@ -15,7 +15,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=requirements,
-    license='3-Clause BSD',
+    license='BSD-3-Clause License',
     author='Kuangdai Leng, Pascal Manuel, Jeyan Thiyagalingam',
     author_email='kuangdai.leng@stfc.ac.uk',
     description='Detecting Bragg peaks in 3D X-ray/neutron images'
