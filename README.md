@@ -89,3 +89,7 @@ Kuangdai Leng<sup>1</sup>, Pascal Manuel<sup>2</sup>, Jeyan Thiyagalingam<sup>1<
 We thank Samuel Jackson<sup>1</sup> and Anders Markvardsen<sup>2</sup> for their 
 investigations in [an earlier project](https://github.com/ISISScientificComputing/ml-peak-finding) 
 that have facilitated our understanding of the problem.
+
+## Funding and Support 
+We gratefully acknowledge the support of Science and Technology Facilities Council (STFC) and the ISIS Neutron and Muon Source (ISIS) for providing access to various datasets used in this project, and the ISIS-ML funding that supported the development of this software. This work has also been partially supported by the Wave I of the UKRI Strategic Priorities Fund under the EPSRC grant (EP/T001569/1), particularly the AI for Science theme in that grant and the Alan Turing Institute.
+
