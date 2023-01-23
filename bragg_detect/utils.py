@@ -13,6 +13,11 @@ from skimage.transform import resize
 
 
 def get_other_dims(dim):
+    """
+    Takes an integer in [0, 1, 2] and returns the two other integers
+    :param dim: int, the known dimension
+    :return: array[int] of the two values which aren't the input
+    """
     if dim == 0:
         return [1, 2]
     elif dim == 1:
@@ -24,6 +29,12 @@ def get_other_dims(dim):
 
 
 def to_flattened(structured, dims):
+    """
+    Flattens a multi-dimensional array into a list of values
+    :param structured: np.ndarray, 2D or 3D array
+    :param dims: int, number of dimensinos of array
+    :return: list[float], the flattened array
+    """
     if len(dims) == 3:
         return (structured[:, 0] * dims[1] * dims[2]
                 + structured[:, 1] * dims[2] + structured[:, 2])

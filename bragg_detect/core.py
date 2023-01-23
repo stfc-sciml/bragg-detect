@@ -12,6 +12,16 @@ from bragg_detect.utils import get_other_dims, to_flattened, to_structured
 
 def blob_log_2d(img, min_sigma, max_sigma, num_sigma, threshold,
                 overlap, log_scale):
+    """
+    :param img:
+    :param min_sigma:
+    :param max_sigma:
+    :param num_sigma:
+    :param threshold:
+    :param overlap:
+    :param log_scale:
+    :return: int, number of blobs
+    """
     blobs = blob_log(img, min_sigma=min_sigma, max_sigma=max_sigma,
                      num_sigma=num_sigma, threshold=threshold,
                      overlap=overlap, log_scale=log_scale)
@@ -22,6 +32,19 @@ def blob_log_2d(img, min_sigma, max_sigma, num_sigma, threshold,
 def find_2d_blobs(data, loc, width, extend,
                   min_sigma, max_sigma, num_sigma, threshold,
                   overlap, log_scale):
+    """
+    :param data:
+    :param loc:
+    :param width:
+    :param extend:
+    :param min_sigma:
+    :param max_sigma:
+    :param num_sigma:
+    :param threshold:
+    :param overlap:
+    :param log_scale:
+    :return: tuple,
+    """
     # slice detect block
     detect_begin = np.clip(loc, 0, data.shape)
     detect_end = np.clip(loc + width, 0, data.shape)
@@ -99,6 +122,14 @@ def find_2d_blobs(data, loc, width, extend,
 
 
 def find_blob_range(blob, z_dim, block_shape, fixed_radii=None):
+    """
+
+    :param blob:
+    :param z_dim:
+    :param block_shape:
+    :param fixed_radii:
+    :return:
+    """
     xy_dims = get_other_dims(z_dim)
     r_xy = blob[2:4] if fixed_radii is None else fixed_radii[xy_dims]
     x = np.arange(max(blob[0] - r_xy[0], 0),
@@ -109,6 +140,13 @@ def find_blob_range(blob, z_dim, block_shape, fixed_radii=None):
 
 
 def find_blob_wise_peaks(blobs, block, fixed_radii):
+    """
+
+    :param blobs:
+    :param block:
+    :param fixed_radii:
+    :return:
+    """
     max_peaks = np.ndarray((0, 3), dtype=int)
     for blob_x in blobs[0]:
         y_x, z_x = find_blob_range(blob_x, 0, block.shape, fixed_radii)
@@ -135,6 +173,14 @@ def find_blob_wise_peaks(blobs, block, fixed_radii):
 
 
 def extrude_blobs_1d(blobs, z_dim, block_shape, fixed_radii=None):
+    """
+
+    :param blobs:
+    :param z_dim:
+    :param block_shape:
+    :param fixed_radii:
+    :return:
+    """
     # loop over blobs
     candidates_3d = np.ndarray((0, 3), dtype=int)
     z = np.arange(block_shape[z_dim])
@@ -160,6 +206,13 @@ def extrude_blobs_1d(blobs, z_dim, block_shape, fixed_radii=None):
 
 
 def extrude_blobs_3d(blobs, block_shape, fixed_radii=None):
+    """
+
+    :param blobs:
+    :param block_shape:
+    :param fixed_radii:
+    :return:
+    """
     # candidates along each axis
     candidates_x = extrude_blobs_1d(blobs[0], 0, block_shape, fixed_radii)
     candidates_y = extrude_blobs_1d(blobs[1], 1, block_shape, fixed_radii)
@@ -173,6 +226,12 @@ def extrude_blobs_3d(blobs, block_shape, fixed_radii=None):
 
 
 def intersect_value_peaks(candidates_flattened, block):
+    """
+
+    :param candidates_flattened:
+    :param block:
+    :return:
+    """
     # structured
     candidates_structured = to_structured(candidates_flattened, block.shape)
 
@@ -204,6 +263,14 @@ def intersect_value_peaks(candidates_flattened, block):
 
 
 def bgm_clustering(peak_structured, block, n_components, n_init):
+    """
+
+    :param peak_structured:
+    :param block:
+    :param n_components:
+    :param n_init:
+    :return:
+    """
     # cluster
     bgm = BayesianGaussianMixture(n_components=n_components, n_init=n_init)
     labels = bgm.fit_predict(peak_structured)
@@ -223,6 +290,13 @@ def bgm_clustering(peak_structured, block, n_components, n_init):
 
 
 def peaks_local_to_global(peak_structured_local, block_loc, data_shape):
+    """
+
+    :param peak_structured_local:
+    :param block_loc:
+    :param data_shape:
+    :return:
+    """
     peak_structured_global = peak_structured_local.copy()
     peak_structured_global[:, 0] += block_loc[0]
     peak_structured_global[:, 1] += block_loc[1]
@@ -239,6 +313,34 @@ def detect_peaks_pool(
         min_sigma, max_sigma, num_sigma, threshold, overlap, log_scale,
         strategy_3d, fixed_radii, n_components, n_init,
         verbose):
+    """
+
+    :param xl:
+    :param xw:
+    :param xe:
+    :param yl:
+    :param yw:
+    :param ye:
+    :param zl:
+    :param zw:
+    :param ze:
+    :param i_block:
+    :param n_blocks:
+    :param t0:
+    :param data:
+    :param min_sigma:
+    :param max_sigma:
+    :param num_sigma:
+    :param threshold:
+    :param overlap:
+    :param log_scale:
+    :param strategy_3d:
+    :param fixed_radii:
+    :param n_components:
+    :param n_init:
+    :param verbose: bool
+    :return:
+    """
     # data is h5 (filename, dsetname)
     if isinstance(data, tuple):
         (filename, dsetname) = data
@@ -292,6 +394,33 @@ def detect_peaks(data, strategy_3d,
                  z_loc, z_width, z_extend,
                  min_sigma, max_sigma, num_sigma, threshold, overlap, log_scale,
                  fixed_radii, n_components, n_init, workers, verbose):
+    """
+
+    :param data: the 3D data as a numpy.ndarray or a tuple
+        (filename, dsetname) to specify a HDF5 dataset storing the 3D data
+    :param strategy_3d:
+    :param x_loc:
+    :param x_width:
+    :param x_extend:
+    :param y_loc:
+    :param y_width:
+    :param y_extend:
+    :param z_loc:
+    :param z_width:
+    :param z_extend:
+    :param min_sigma:
+    :param max_sigma:
+    :param num_sigma:
+    :param threshold:
+    :param overlap:
+    :param log_scale:
+    :param fixed_radii:
+    :param n_components:
+    :param n_init:
+    :param workers: Optional[int], number of processes to use, defaults to 1
+    :param verbose: bool
+    :return: tuple, (number of peaks detected, time taken)
+    """
     # shared
     t0 = time.time()
     n_blocks = len(x_loc) * len(y_loc) * len(z_loc)

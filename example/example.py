@@ -4,15 +4,14 @@ import numpy as np
 from bragg_detect import detect_bragg_peaks, plot_peaks_over_data
 
 if __name__ == '__main__':
-    # read data
+    # load data
     with h5py.File('data.hdf5', 'r') as h5:
         dset = list(h5.keys())[0]
         data = h5[dset][:]
 
     # detect
-    peaks = detect_bragg_peaks(data,
-                               large_peak_size=[10, 10, 50],
-                               threshold=.2, workers=1)
+    peaks = detect_bragg_peaks(data, large_peak_size=[10, 10, 20],
+                               threshold=.28, workers=1, strategy_3d='bgm')
 
     # if using multiple workers, pass (filename, dsetname) instead of data
     # for better efficiency; for example:
