@@ -11,7 +11,7 @@ if __name__ == '__main__':
 
     # detect
     peaks = detect_bragg_peaks(data, large_peak_size=[10, 10, 20],
-                               threshold=.28, workers=1, strategy_3d='bgm')
+                               threshold=.25, workers=1, strategy_3d='bgm_clustering')
 
     # if using multiple workers, pass (filename, dsetname) instead of data
     # for better efficiency; for example:

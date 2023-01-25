@@ -17,26 +17,22 @@ from bragg_detect.utils import plot_image, plot_peaks
 
 
 def detect_bragg_peaks(data,
-                       # slicing
                        large_peak_size, detect_block_size=5,
                        detect_block_overlap=2, verify_block_size=10,
-                       # 2d blobs by LoG
                        min_sigma=None, max_sigma=None, num_sigma=5,
-                       threshold=.2, overlap=.5, log_scale=False,
-                       # 3d peak selection
-                       strategy_3d='individual', n_components_bgm=5,
+                       threshold=.28, overlap=.5, log_scale=False,
+                       strategy_3d='bgm', n_components_bgm=5,
                        n_init_bgm=1,
-                       # others
                        workers=1, verbose=True):
     """
-    Detect Bragg peaks.
+    User interface for detecting Bragg peaks.
 
     :param data: the 3D data as a numpy.ndarray or a tuple
         (filename, dsetname) to specify a HDF5 dataset storing the 3D data;
         when using multiple works, use (filename, dsetname) for both better
         performance and less memory consumption
-    :param large_peak_size: approximate size of the large peaks in data,
-        array-like in the form of (size_x, size_y, size_z);
+    :param large_peak_size: approximate size, in pixels, of the large peaks in
+        data, array-like in the form of [size_x, size_y, size_z];
     :param detect_block_size: size of the detection blocks relative to
         `large_peak_size`; default is 5
     :param detect_block_overlap: overlap of the detection blocks
@@ -63,7 +59,7 @@ def detect_bragg_peaks(data,
         scikit-learn, used only for `bgm_clustering` strategy; default is 1
     :param workers: number of workers; default is 1
     :param verbose: verbose info during running; default is True
-    :return: detected Bragg peaks
+    :return: array of detected Bragg peak positions
     """
     # data is h5 (filename, dsetname)
     if isinstance(data, tuple):
