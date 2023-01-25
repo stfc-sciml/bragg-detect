@@ -370,17 +370,25 @@ def detect_peaks_pool(
     :param n_blocks: int, total number of blocks
     :param t0: start time in seconds
     :param data: Union[tuple, array], the dataset in which to loacte peaks
-    :param min_sigma:
-    :param max_sigma:
-    :param num_sigma:
-    :param threshold:
-    :param overlap:
-    :param log_scale:
-    :param strategy_3d:
+    :param min_sigma: float, smallest width of peaks to look for in pixels
+    :param max_sigma: float, largest width of peaks to look for in pixels
+    :param num_sigma: int, The number of intermediate values of standard
+    deviations to consider between min_sigma and max_sigma.
+    :param threshold: float, The absolute lower bound for scale space maxima.
+    Local maxima smaller than threshold are ignored.
+    :param overlap: float, A value between 0 and 1. If the area of two blobs
+    overlaps by a fraction greater than threshold, the smaller blob is
+    eliminated
+    :param log_scale: bool, If set intermediate values of standard deviations
+    are interpolated using a logarithmic scale to the base 10. If not, linear
+    interpolation is used.
+    :param strategy_3d: str, strategy to use, allowed values are 'individual'
+    which would use Laplacian of Gaussian, or 'bgm_clustering' which uses
+    a Bayesian Gaussain Mixture model.
     :param fixed_radii:
-    :param n_components:
+    :param n_components:int, number of components for bgm
     :param n_init:
-    :param verbose: bool
+    :param verbose: bool, option to print output
     :return:
     """
     # data is h5 (filename, dsetname)
@@ -497,6 +505,8 @@ def detect_peaks(data, strategy_3d,
     peaks_detected = np.ndarray((0, 3), dtype=int)
     for peaks_global_block in peaks_global_pool:
         peaks_detected = np.union1d(peaks_detected, peaks_global_block)
+    #  Does this not overwrite the peaks_detected?
+    #  Also, how does this give coordinates??
 
     # data is h5 (filename, dsetname)
     if isinstance(data, tuple):
