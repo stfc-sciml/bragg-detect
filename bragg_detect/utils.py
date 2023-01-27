@@ -18,45 +18,42 @@ def get_other_dims(dim):
     :param dim: int, the known dimension
     :return: array[int] of the two values which aren't the input
     """
-    arr = [0, 1, 2]
-    if dim in arr:
-        arr.remove(dim)
-        return arr
-    else:
+    if dim not in range(3):
         raise ValueError('please provide a dimension 0, 1, or 2')
 
+    return [i for i in range(3) if i != dim]
 
-def to_flattened(structured, dims):
+
+def to_flattened(structured_array, dims):
     """
-    Flattens a multi-dimensional array, summing the values
-    TODO: find out what this does!
-    :param structured: np.ndarray, 2D or 3D array
-    :param dims: int, number of dimensinos of array
-    :return: list[float], the flattened array
+    Converts an array index from a 2 or 3D array to the equivalent 1D index
+    :param structured_array: np.ndarray[int], [n, 2] or [n, 3]
+    :param dims: np.ndarray, 2 or 3 valued array
+    :return: np.ndarray[int], the flattened array
     """
     if len(dims) == 3:
-        return (structured[:, 0] * dims[1] * dims[2]
-                + structured[:, 1] * dims[2] + structured[:, 2])
+        return (structured_array[:, 0] * dims[1] * dims[2]
+                + structured_array[:, 1] * dims[2] + structured_array[:, 2])
     else:
-        return structured[:, 0] * dims[1] + structured[:, 1]
+        return structured_array[:, 0] * dims[1] + structured_array[:, 1]
 
 
-def to_structured(flattened, dims):
+def to_structured(flattened_array, dims):
     """
-    Takes a flattened dataset and returns it to a multi-dimensional array
-    TODO: find out what this does!
-    :param flattened: list[float], array to be reshaped
-    :param dims: int, number of dimensions to shape the data into
+    Takes a flattened dataset and forms a multi-dimensional array of shape dims
+    TODO: find out what this does
+    :param flattened_array: np.ndarray[float], array to be reshaped
+    :param dims: np.ndarray[int], dimensions to shape the data into
     :return:
     """
     if len(dims) == 3:
-        x = flattened // (dims[1] * dims[2])
-        y = (flattened - x * dims[1] * dims[2]) // dims[2]
-        z = (flattened - x * dims[1] * dims[2] - y * dims[2])
+        x = flattened_array // (dims[1] * dims[2])
+        y = (flattened_array - x * dims[1] * dims[2]) // dims[2]
+        z = (flattened_array - x * dims[1] * dims[2] - y * dims[2])
         return np.transpose(np.array([x, y, z]))
     else:
-        x = flattened // dims[1]
-        y = flattened - x * dims[1]
+        x = flattened_array // dims[1]
+        y = flattened_array - x * dims[1]
         return np.transpose(np.array([x, y]))
 
 

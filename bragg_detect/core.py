@@ -339,11 +339,12 @@ def peaks_local_to_global(peak_structured_local, block_loc, data_shape):
     :param data_shape: array, shape of the data
     :return:
     """
-    peak_structured_global = peak_structured_local.copy()
-    peak_structured_global[:, 0] += block_loc[0]
-    peak_structured_global[:, 1] += block_loc[1]
-    peak_structured_global[:, 2] += block_loc[2]
-    return to_flattened(peak_structured_global, data_shape)
+    peaks_global = peak_structured_local.copy()
+
+    for index in np.arrange(3):
+        peaks_global[:, index] += block_loc[index]
+
+    return to_flattened(peaks_global, data_shape)
 
 
 # function for Pool
@@ -425,7 +426,7 @@ def detect_peaks_pool(
     elif strategy_3d == 'individual':
         peaks_local = find_blob_wise_peaks(blobs, block, fixed_radii)
     else:
-        raise RuntimeError(f'Unsupported 3D strategy: {strategy_3d}')
+        raise ValueError(f'Unsupported 3D strategy: {strategy_3d}')
 
     # local to global
     peaks_global = peaks_local_to_global(peaks_local, block_loc, data.shape)
