@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+from functools import reduce
 
 from bragg_detect import core, utils
 
@@ -24,6 +25,9 @@ def test_to_flattened():
 
 
 def test_to_structured():
-    flat_array = np.arange(6)
-    arr = utils.to_structured(flat_array, [0,1,2])
-    assert(arr == np.arange(6).reshape((2,3)))
+    for dims in [(2,3), (1,2,3), (2,3,4)]:
+        flat_array = np.arange(np.product(dims))
+        arr = utils.to_structured(flat_array, dims)
+        indicies = np.unravel_index(flat_array, dims)
+        compare = reduce(lambda x,y: np.vstack((x,y)), indicies).T
+        assert(np.all(arr == compare))

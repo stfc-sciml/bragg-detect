@@ -68,6 +68,9 @@ def find_2d_blobs(data, loc, width, extend,
                   min_sigma, max_sigma, num_sigma, threshold,
                   overlap, log_scale):
     """
+    Slice the data into small blocks and then call the function blog_log to
+    detect peaks withing a block and veryify the peaks using a larger block
+    size (since real peaks should exist in both bock sizes).
     :param data:
     :param loc:
     :param width:
@@ -211,9 +214,10 @@ def find_blob_wise_peaks(blobs, block, fixed_radii):
 
 def extrude_blobs_1d(blobs, z_dim, block_shape, fixed_radii=None):
     """
-
+    Take a blob from skimage, and extend the blob to a cylindrical volume
+    across z_dim
     :param blobs:
-    :param z_dim:
+    :param z_dim: any dimension
     :param block_shape:
     :param fixed_radii:
     :return:
@@ -244,7 +248,7 @@ def extrude_blobs_1d(blobs, z_dim, block_shape, fixed_radii=None):
 
 def extrude_blobs_3d(blobs, block_shape, fixed_radii=None):
     """
-    TODO: what does this do?
+    TApply 1D across all 3 dimensinos
     :param blobs:
     :param block_shape:
     :param fixed_radii:
@@ -264,10 +268,14 @@ def extrude_blobs_3d(blobs, block_shape, fixed_radii=None):
 
 def intersect_value_peaks(candidates_flattened, block):
     """
-    TODO: what does this do?
-    :param candidates_flattened:
-    :param block:
-    :return:
+    Takes the intersection of x,y, and z extruded volumes in order to determine
+    peaks have been found in all three dimensions. Then look within these
+    intersected volume to find the actual peak locations.
+    :param candidates_flattened: np.ndarray[int], array of peak indicies
+    :param block: np.ndarray, the subset of the entire dataset being
+    investigated
+
+    :return: np.ndarray[int], unflattened array of validated peak coordinates
     """
     # structured
     candidates_structured = to_structured(candidates_flattened, block.shape)
@@ -357,7 +365,8 @@ def detect_peaks_pool(
         strategy_3d, fixed_radii, n_components, n_init,
         verbose):
     """
-
+    Wrapper for whole process on each block in order to send it to pool for
+    multiprocessing
     :param xl: float, block location in x
     :param xw: float, block width in x
     :param xe: float, block extent in x
@@ -446,7 +455,7 @@ def detect_peaks(data, strategy_3d,
                  min_sigma, max_sigma, num_sigma, threshold, overlap, log_scale,
                  fixed_radii, n_components, n_init, workers, verbose):
     """
-
+    Main function for running whole process
     :param data: the 3D data as a numpy.ndarray or a tuple
         (filename, dsetname) to specify a HDF5 dataset storing the 3D data
     :param strategy_3d:

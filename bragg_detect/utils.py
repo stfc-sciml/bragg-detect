@@ -7,6 +7,7 @@
 
 
 """ utilities """
+from functools import reduce
 
 import numpy as np
 from skimage.transform import resize
@@ -40,12 +41,12 @@ def to_flattened(structured_array, dims):
 
 def to_structured(flattened_array, dims):
     """
-    Takes a flattened dataset and forms a multi-dimensional array of shape dims
-    TODO: find out what this does
-    :param flattened_array: np.ndarray[float], array to be reshaped
+    Takes a flattened set of array indicies and forms a multi-dimensional array
+    of shape dims
+    :param flattened_array: np.ndarray[int], array to be reshaped
     :param dims: np.ndarray[int], dimensions to shape the data into
     :return:
-    """
+
     if len(dims) == 3:
         x = flattened_array // (dims[1] * dims[2])
         y = (flattened_array - x * dims[1] * dims[2]) // dims[2]
@@ -55,7 +56,10 @@ def to_structured(flattened_array, dims):
         x = flattened_array // dims[1]
         y = flattened_array - x * dims[1]
         return np.transpose(np.array([x, y]))
+    """
 
+    indicies = np.unravel_index(flattened_array, dims)
+    return reduce(lambda x,y: np.vstack((x,y)), indicies).T
 
 def plot_image(ax, image, plot_size=None, vmax=1, axes_labels=None):
     """
