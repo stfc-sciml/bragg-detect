@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from functools import reduce
 
-from bragg_detect import core, utils
+from bragg_detect import utils
 
 @pytest.mark.parametrize('dimension, expected',
                          [(0, [1,2]),
@@ -29,5 +29,5 @@ def test_to_structured():
         flat_array = np.arange(np.product(dims))
         arr = utils.to_structured(flat_array, dims)
         indicies = np.unravel_index(flat_array, dims)
-        compare = reduce(lambda x,y: np.vstack((x,y)), indicies).T
-        assert(np.all(arr == compare))
+        expected = reduce(lambda x,y: np.vstack((x,y)), indicies).T
+        assert(np.all(arr == expected))

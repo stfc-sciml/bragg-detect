@@ -53,8 +53,8 @@ def blob_log_2d(img, min_sigma, max_sigma, num_sigma, threshold,
 
 def blob_log_process(blobs):
     """
-    A post processing of the skimage `blob_log` algorithm
-    TODO: why do this?
+    Convert from blob's sigma, to a blob radius (sqrt(2)*sigma for 2D image),
+    then return the ceiling, since we want pixel numbers.
     :param blobs: np.ndarray, 2d array with each row representing 2 coordinate
     values for a 2D image, or 3 coordinate values for a 3D image, plus the
     sigma(s) used.
@@ -71,16 +71,27 @@ def find_2d_blobs(data, loc, width, extend,
     Slice the data into small blocks and then call the function blog_log to
     detect peaks withing a block and veryify the peaks using a larger block
     size (since real peaks should exist in both bock sizes).
-    :param data:
-    :param loc:
-    :param width:
-    :param extend:
-    :param min_sigma:
-    :param max_sigma:
-    :param num_sigma:
-    :param threshold:
-    :param overlap:
-    :param log_scale:
+    :param data:the 3D data as a numpy.ndarray or a tuple
+        (filename, dsetname) to specify a HDF5 dataset storing the 3D data;
+        when using multiple works, use (filename, dsetname) for both better
+        performance and less memory consumption
+    :param loc: int, location of the block in pixels
+    :param width: int, width in pixels of the blocks
+    :param extend: int, number of pixels to extend the block for the
+    verification block
+    :param min_sigma: float, min_sigma for blob_log() of scikit-image;
+        default is None, or large_peak_size // 4
+    :param max_sigma: float, for blob_log() of scikit-image;
+        default is None, or large_peak_size
+    :param num_sigma: float, num_sigma for blob_log() of scikit-image;
+        default is 5
+    :param threshold: float, threshold for blob_log() of scikit-image;
+        default is 0.2
+    :param overlap: float, overlap for blob_log() of scikit-image;
+        default is 0.5
+    :param log_scale: bool: option to use a log_scale for blob_log() default
+    is False
+
     :return: tuple,
     """
     # slice detect block
@@ -163,12 +174,13 @@ def find_2d_blobs(data, loc, width, extend,
 
 def find_blob_range(blob, z_dim, block_shape, fixed_radii=None):
     """
-
-    :param blob:
-    :param z_dim:
-    :param block_shape:
-    :param fixed_radii:
-    :return:
+    Find the range of pixels corresponding to the blob in 2D
+    :param blob: np.ndarray,
+    :param z_dim: int, dimension in [0, 1, 2] not necessarily z
+    :param block_shape: np.ndarray, shape of block in [x, y, z]
+    :param fixed_radii:  int, size of radius in pixels
+    :return: tuple[np.ndarray, np.ndarray], pixel values in 2D coordinates
+    which are inside the blob radius
     """
     xy_dims = get_other_dims(z_dim)
     r_xy = blob[2:4] if fixed_radii is None else fixed_radii[xy_dims]
@@ -216,8 +228,8 @@ def extrude_blobs_1d(blobs, z_dim, block_shape, fixed_radii=None):
     """
     Take a blob from skimage, and extend the blob to a cylindrical volume
     across z_dim
-    :param blobs:
-    :param z_dim: any dimension
+    :param blobs: np.ndarray,
+    :param z_dim: int, in [0, 1, 2] representing any dimension
     :param block_shape:
     :param fixed_radii:
     :return:
@@ -248,13 +260,14 @@ def extrude_blobs_1d(blobs, z_dim, block_shape, fixed_radii=None):
 
 def extrude_blobs_3d(blobs, block_shape, fixed_radii=None):
     """
-    TApply 1D across all 3 dimensinos
-    :param blobs:
+    Apply 1D extrusion across all 3 dimensions and find the intersection, then
+    return the interstected volume
+    :param blobs: np.ndarray, array of candidate blob
     :param block_shape:
     :param fixed_radii:
     :return:
     """
-    # candidates along each axis
+    # extrude candidates along each axis
     candidates_x = extrude_blobs_1d(blobs[0], 0, block_shape, fixed_radii)
     candidates_y = extrude_blobs_1d(blobs[1], 1, block_shape, fixed_radii)
     candidates_z = extrude_blobs_1d(blobs[2], 2, block_shape, fixed_radii)
