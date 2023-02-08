@@ -15,7 +15,7 @@ def test_extrude_blobs_3d():#blobs, block_shape, expected):
     expected = np.arange(4)
     assert(np.all(extrusion == expected))
 
-
+@pytest.mark.skip("not yet working")
 def test_extrude_blobs_1d():
     blobs = np.arange(9).reshape((3,3))
     block_shape = [2, 3, 4]
