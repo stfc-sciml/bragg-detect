@@ -175,7 +175,7 @@ def find_2d_blobs(data, loc, width, extend,
 def find_blob_range(blob, z_dim, block_shape, fixed_radii=None):
     """
     Find the range of pixels corresponding to the blob in 2D
-    :param blob: np.ndarray,
+    :param blob: np.ndarray, flattened array of input pixels
     :param z_dim: int, dimension in [0, 1, 2] not necessarily z
     :param block_shape: np.ndarray, shape of block in [x, y, z]
     :param fixed_radii:  int, size of radius in pixels
@@ -412,7 +412,7 @@ def detect_peaks_pool(
     :param n_components:int, number of components for bgm
     :param n_init:
     :param verbose: bool, option to print output
-    :return:
+    :return: np.ndarray, array of peaks found
     """
     # data is h5 (filename, dsetname)
     if isinstance(data, tuple):
