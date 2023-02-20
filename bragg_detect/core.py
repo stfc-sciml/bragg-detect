@@ -9,12 +9,57 @@ from sklearn.mixture import BayesianGaussianMixture
 
 from bragg_detect.utils import get_other_dims, to_flattened, to_structured
 
-
+'''
 def blob_log_2d(img, min_sigma, max_sigma, num_sigma, threshold,
                 overlap, log_scale):
+    """
+    Finds blobs in the given grayscale image.
+    Blobs are found using the Laplacian of Gaussian (LoG) method. For each
+    blob found, the method returns its coordinates and the standard deviation
+    of the Gaussian kernel that detected the blob.
+
+    :param img:np.ndarray, Input grayscale image, blobs are assumed to be light
+    on dark background (white on black).
+    :param min_sigma: Union[float, array], the minimum standard deviation for
+    Gaussian kernel. Keep this low to detect smaller blobs.
+    :param max_sigma: Union[float, array], the maximum standard deviation for
+    Gaussian kernel. Keep this high to detect larger blobs.
+    :param num_sigma: Optional[int], the number of intermediate values of
+    standard deviations to consider between min_sigma and max_sigma, default 10
+    :param threshold: Optional[float], The absolute lower bound for scale space
+    maxima. Local maxima smaller than threshold are ignored. Reduce this to
+    detect blobs with lower intensities.
+    :param overlap: Optional[float], a value between 0 and 1. If the area of
+    two blobs overlaps by a fraction greater than threshold, the smaller blob
+    is eliminated. Defaults to 0.5
+    :param log_scale: Optional[bool], If set intermediate values of standard
+    deviations are interpolated using a logarithmic scale to the base 10. If
+    not, linear interpolation is used.
+
+    :return: np.ndarray, A 2d array with each row representing 2 coordinate
+    values for a 2D image, or 3 coordinate values for a 3D image, plus the
+    sigma(s) used. When a single sigma is passed, outputs are: (r, c, sigma) or
+    (p, r, c, sigma) where (r, c) or (p, r, c) are coordinates of the blob and
+    sigma is the standard deviation of the Gaussian kernel which detected the
+    blob. When an anisotropic gaussian is used (sigmas per dimension), the
+    detected sigma is returned for each dimension.
+    """
     blobs = blob_log(img, min_sigma=min_sigma, max_sigma=max_sigma,
                      num_sigma=num_sigma, threshold=threshold,
                      overlap=overlap, log_scale=log_scale)
+    blobs[:, 2:] *= np.sqrt(2)
+    return np.ceil(blobs).astype(int)
+'''
+
+def blob_log_process(blobs):
+    """
+    Convert from blob's sigma, to a blob radius (sqrt(2)*sigma for 2D image),
+    then return the ceiling, since we want pixel numbers.
+    :param blobs: np.ndarray, 2d array with each row representing 2 coordinate
+    values for a 2D image, or 3 coordinate values for a 3D image, plus the
+    sigma(s) used.
+    :return: np.ndarray
+    """
     blobs[:, 2:] *= np.sqrt(2)
     return np.ceil(blobs).astype(int)
 
@@ -22,6 +67,33 @@ def blob_log_2d(img, min_sigma, max_sigma, num_sigma, threshold,
 def find_2d_blobs(data, loc, width, extend,
                   min_sigma, max_sigma, num_sigma, threshold,
                   overlap, log_scale):
+    """
+    Slice the data into small blocks and then call the function blog_log to
+    detect peaks withing a block and veryify the peaks using a larger block
+    size (since real peaks should exist in both bock sizes).
+    :param data:the 3D data as a numpy.ndarray or a tuple
+        (filename, dsetname) to specify a HDF5 dataset storing the 3D data;
+        when using multiple works, use (filename, dsetname) for both better
+        performance and less memory consumption
+    :param loc: int, location of the block in pixels
+    :param width: int, width in pixels of the blocks
+    :param extend: int, number of pixels to extend the block for the
+    verification block
+    :param min_sigma: float, min_sigma for blob_log() of scikit-image;
+        default is None, or large_peak_size // 4
+    :param max_sigma: float, for blob_log() of scikit-image;
+        default is None, or large_peak_size
+    :param num_sigma: float, num_sigma for blob_log() of scikit-image;
+        default is 5
+    :param threshold: float, threshold for blob_log() of scikit-image;
+        default is 0.2
+    :param overlap: float, overlap for blob_log() of scikit-image;
+        default is 0.5
+    :param log_scale: bool: option to use a log_scale for blob_log() default
+    is False
+
+    :return: tuple,
+    """
     # slice detect block
     detect_begin = np.clip(loc, 0, data.shape)
     detect_end = np.clip(loc + width, 0, data.shape)
@@ -58,35 +130,37 @@ def find_2d_blobs(data, loc, width, extend,
 
         # find blobs in detect images
         other_dims = get_other_dims(dim)
-        detect_blob = blob_log_2d(detect_img,
+        detect_blob = blob_log(detect_img,
                                   min_sigma=min_sigma[other_dims],
                                   max_sigma=max_sigma[other_dims],
                                   num_sigma=num_sigma, threshold=threshold,
                                   overlap=overlap, log_scale=log_scale)
-        if len(detect_blob) == 0:
-            # if one dim is null, 3d is null
-            return empty_blobs, detect_block
-
-        verify_blob = blob_log_2d(verify_img,
+        verify_blob = blob_log(verify_img,
                                   min_sigma=min_sigma[other_dims],
                                   max_sigma=max_sigma[other_dims],
                                   num_sigma=num_sigma, threshold=threshold,
                                   overlap=overlap, log_scale=log_scale)
-        if len(verify_blob) == 0:
+
+        if len(detect_blob) or len(verify_blob) == 0:
             # if one dim is null, 3d is null
             return empty_blobs, detect_block
 
-        # convert both to global and intersect
+        detect_blob = blob_log_process(detect_blob)
+        verify_blob = blob_log_process(verify_blob)
+
+        # convert both to global coordinates and intersect
         detect_blob[:, 0] += detect_begin[other_dims[0]]
         detect_blob[:, 1] += detect_begin[other_dims[1]]
         verify_blob[:, 0] += verify_begin[other_dims[0]]
         verify_blob[:, 1] += verify_begin[other_dims[1]]
+
         dims_2d = np.array(data.shape)[other_dims]
         detect_flattened = to_flattened(detect_blob[:, :2], dims_2d)
         verify_flattened = to_flattened(verify_blob[:, :2], dims_2d)
         _, comm_indices, _ = np.intersect1d(detect_flattened, verify_flattened,
                                             return_indices=True)
         detect_blob = detect_blob[comm_indices, :]
+
         if len(detect_blob) == 0:
             # if one dim is null, 3d is null
             return empty_blobs, detect_block
@@ -99,6 +173,15 @@ def find_2d_blobs(data, loc, width, extend,
 
 
 def find_blob_range(blob, z_dim, block_shape, fixed_radii=None):
+    """
+    Find the range of pixels corresponding to the blob in 2D
+    :param blob: np.ndarray, flattened array of input pixels
+    :param z_dim: int, dimension in [0, 1, 2] not necessarily z
+    :param block_shape: np.ndarray, shape of block in [x, y, z]
+    :param fixed_radii:  int, size of radius in pixels
+    :return: tuple[np.ndarray, np.ndarray], pixel values in 2D coordinates
+    which are inside the blob radius
+    """
     xy_dims = get_other_dims(z_dim)
     r_xy = blob[2:4] if fixed_radii is None else fixed_radii[xy_dims]
     x = np.arange(max(blob[0] - r_xy[0], 0),
@@ -109,6 +192,13 @@ def find_blob_range(blob, z_dim, block_shape, fixed_radii=None):
 
 
 def find_blob_wise_peaks(blobs, block, fixed_radii):
+    """
+
+    :param blobs:
+    :param block:
+    :param fixed_radii:
+    :return:
+    """
     max_peaks = np.ndarray((0, 3), dtype=int)
     for blob_x in blobs[0]:
         y_x, z_x = find_blob_range(blob_x, 0, block.shape, fixed_radii)
@@ -135,6 +225,15 @@ def find_blob_wise_peaks(blobs, block, fixed_radii):
 
 
 def extrude_blobs_1d(blobs, z_dim, block_shape, fixed_radii=None):
+    """
+    Take a blob from skimage, and extend the blob to a cylindrical volume
+    across z_dim
+    :param blobs: np.ndarray,
+    :param z_dim: int, in [0, 1, 2] representing any dimension
+    :param block_shape:
+    :param fixed_radii:
+    :return:
+    """
     # loop over blobs
     candidates_3d = np.ndarray((0, 3), dtype=int)
     z = np.arange(block_shape[z_dim])
@@ -160,7 +259,15 @@ def extrude_blobs_1d(blobs, z_dim, block_shape, fixed_radii=None):
 
 
 def extrude_blobs_3d(blobs, block_shape, fixed_radii=None):
-    # candidates along each axis
+    """
+    Apply 1D extrusion across all 3 dimensions and find the intersection, then
+    return the interstected volume
+    :param blobs: np.ndarray, array of candidate blob
+    :param block_shape:
+    :param fixed_radii:
+    :return:
+    """
+    # extrude candidates along each axis
     candidates_x = extrude_blobs_1d(blobs[0], 0, block_shape, fixed_radii)
     candidates_y = extrude_blobs_1d(blobs[1], 1, block_shape, fixed_radii)
     candidates_z = extrude_blobs_1d(blobs[2], 2, block_shape, fixed_radii)
@@ -173,6 +280,16 @@ def extrude_blobs_3d(blobs, block_shape, fixed_radii=None):
 
 
 def intersect_value_peaks(candidates_flattened, block):
+    """
+    Takes the intersection of x,y, and z extruded volumes in order to determine
+    peaks have been found in all three dimensions. Then look within these
+    intersected volume to find the actual peak locations.
+    :param candidates_flattened: np.ndarray[int], array of peak indicies
+    :param block: np.ndarray, the subset of the entire dataset being
+    investigated
+
+    :return: np.ndarray[int], unflattened array of validated peak coordinates
+    """
     # structured
     candidates_structured = to_structured(candidates_flattened, block.shape)
 
@@ -204,6 +321,20 @@ def intersect_value_peaks(candidates_flattened, block):
 
 
 def bgm_clustering(peak_structured, block, n_components, n_init):
+    """
+    Using sklearn's BayesianGaussianMixture, estimate the parameters of
+    peak_structured and predict the position
+
+    :param peak_structured: array, List of n_components-dimensional data
+    points. Each row corresponds to a single data point
+    :param block:
+    :param n_components: int, The number of mixture components. The model can
+    decide to not use all components, so number of effective components
+    is smaller than n_components
+    :param n_init: int, The number of initializations to perform. The result
+    with the highest lower bound value on the likelihood is kept
+    :return: array, the coordinates of the largest peaks found
+    """
     # cluster
     bgm = BayesianGaussianMixture(n_components=n_components, n_init=n_init)
     labels = bgm.fit_predict(peak_structured)
@@ -217,17 +348,24 @@ def bgm_clustering(peak_structured, block, n_components, n_init):
         values_in_cluster = block[(peaks_in_cluster[:, 0],
                                    peaks_in_cluster[:, 1],
                                    peaks_in_cluster[:, 2])]
-        max_loc = np.argwhere(values_in_cluster == np.max(values_in_cluster))
-        max_peaks = np.concatenate((max_peaks, peaks_in_cluster[max_loc[0]]))
+        max_peaks = np.concatenate((max_peaks, np.argmax(values_in_cluster)))
     return max_peaks
 
 
 def peaks_local_to_global(peak_structured_local, block_loc, data_shape):
-    peak_structured_global = peak_structured_local.copy()
-    peak_structured_global[:, 0] += block_loc[0]
-    peak_structured_global[:, 1] += block_loc[1]
-    peak_structured_global[:, 2] += block_loc[2]
-    return to_flattened(peak_structured_global, data_shape)
+    """
+    Convert between the local block coordinates and the global ones
+    :param peak_structured_local: array, local peak coordinates
+    :param block_loc: array, global block coordinates
+    :param data_shape: array, shape of the data
+    :return:
+    """
+    peaks_global = peak_structured_local.copy()
+
+    for index in np.arrange(3):
+        peaks_global[:, index] += block_loc[index]
+
+    return to_flattened(peaks_global, data_shape)
 
 
 # function for Pool
@@ -239,6 +377,43 @@ def detect_peaks_pool(
         min_sigma, max_sigma, num_sigma, threshold, overlap, log_scale,
         strategy_3d, fixed_radii, n_components, n_init,
         verbose):
+    """
+    Wrapper for whole process on each block in order to send it to pool for
+    multiprocessing
+    :param xl: float, block location in x
+    :param xw: float, block width in x
+    :param xe: float, block extent in x
+    :param yl: float, block location in y
+    :param yw: float, block width in y
+    :param ye: float, block extent in y
+    :param zl: float, block location in z
+    :param zw: float, block width in z
+    :param ze: float, block extent in z
+    :param i_block: int, current block number
+    :param n_blocks: int, total number of blocks
+    :param t0: start time in seconds
+    :param data: Union[tuple, array], the dataset in which to loacte peaks
+    :param min_sigma: float, smallest width of peaks to look for in pixels
+    :param max_sigma: float, largest width of peaks to look for in pixels
+    :param num_sigma: int, The number of intermediate values of standard
+    deviations to consider between min_sigma and max_sigma.
+    :param threshold: float, The absolute lower bound for scale space maxima.
+    Local maxima smaller than threshold are ignored.
+    :param overlap: float, A value between 0 and 1. If the area of two blobs
+    overlaps by a fraction greater than threshold, the smaller blob is
+    eliminated
+    :param log_scale: bool, If set intermediate values of standard deviations
+    are interpolated using a logarithmic scale to the base 10. If not, linear
+    interpolation is used.
+    :param strategy_3d: str, strategy to use, allowed values are 'individual'
+    which would use Laplacian of Gaussian, or 'bgm_clustering' which uses
+    a Bayesian Gaussain Mixture model.
+    :param fixed_radii:
+    :param n_components:int, number of components for bgm
+    :param n_init:
+    :param verbose: bool, option to print output
+    :return: np.ndarray, array of peaks found
+    """
     # data is h5 (filename, dsetname)
     if isinstance(data, tuple):
         (filename, dsetname) = data
@@ -273,7 +448,7 @@ def detect_peaks_pool(
     elif strategy_3d == 'individual':
         peaks_local = find_blob_wise_peaks(blobs, block, fixed_radii)
     else:
-        raise RuntimeError(f'Unsupported 3D strategy: {strategy_3d}')
+        raise ValueError(f'Unsupported 3D strategy: {strategy_3d}')
 
     # local to global
     peaks_global = peaks_local_to_global(peaks_local, block_loc, data.shape)
@@ -292,6 +467,33 @@ def detect_peaks(data, strategy_3d,
                  z_loc, z_width, z_extend,
                  min_sigma, max_sigma, num_sigma, threshold, overlap, log_scale,
                  fixed_radii, n_components, n_init, workers, verbose):
+    """
+    Main function for running whole process
+    :param data: the 3D data as a numpy.ndarray or a tuple
+        (filename, dsetname) to specify a HDF5 dataset storing the 3D data
+    :param strategy_3d:
+    :param x_loc:
+    :param x_width:
+    :param x_extend:
+    :param y_loc:
+    :param y_width:
+    :param y_extend:
+    :param z_loc:
+    :param z_width:
+    :param z_extend:
+    :param min_sigma:
+    :param max_sigma:
+    :param num_sigma:
+    :param threshold:
+    :param overlap:
+    :param log_scale:
+    :param fixed_radii:
+    :param n_components:
+    :param n_init:
+    :param workers: Optional[int], number of processes to use, defaults to 1
+    :param verbose: bool
+    :return: tuple, (number of peaks detected, time taken)
+    """
     # shared
     t0 = time.time()
     n_blocks = len(x_loc) * len(y_loc) * len(z_loc)
@@ -326,6 +528,8 @@ def detect_peaks(data, strategy_3d,
     peaks_detected = np.ndarray((0, 3), dtype=int)
     for peaks_global_block in peaks_global_pool:
         peaks_detected = np.union1d(peaks_detected, peaks_global_block)
+    #  Does this not overwrite the peaks_detected?
+    #  Also, how does this give coordinates??
 
     # data is h5 (filename, dsetname)
     if isinstance(data, tuple):
