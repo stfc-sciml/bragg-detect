@@ -80,7 +80,7 @@ show respectively the input 3D data and the detected Bragg peaks.
 
 
 ## Credits
-Kuangdai Leng<sup>1</sup>, Pascal Manuel<sup>2</sup>, Jeyan Thiyagalingam<sup>1</sup>
+Kuangdai Leng<sup>1</sup>, Pascal Manuel<sup>2</sup>, Jos Cooper<sup>2</sup>, Jeyan Thiyagalingam<sup>1</sup>
 
 <sup>1</sup> Scientific Computing Department, STFC, UK
 
